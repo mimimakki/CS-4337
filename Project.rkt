@@ -40,14 +40,15 @@
        (helper (cdr chars) (if (string=? current "") acc (cons current acc)) "")]))
   (helper (string->list input) '() ""))
 
-
+  
 (define (eval-operation operator rest history)
   (let-values ([(operand1 remaining1) (eval-expression rest history)])
-    (if (null? remaining1)  ; Negation operation
-        (values (operator operand1) remaining1)
+    (if (or (eq? operand1 'error) (null? remaining1))  ; Returns error if first operand is invalid
+        (values 'error '()) 
         (let-values ([(operand2 remaining2) (eval-expression remaining1 history)])
-          (if (or (eq? operand2 'error) (eq? operand1 'error)) 
-              (values 'error '())
+          (if (or (eq? operand2 'error)   ; Returns error if second operand is invalid
+                  (and (eq? operator /) (= operand2 0)))  ; Returns error if division by zero
+              (values 'error '())  
               (values (operator operand1 operand2) remaining2))))))
 
 
@@ -74,8 +75,11 @@
 (define (eval-loop history) ; The history is a parameter to the eval loop function 
   (when interactive? (display "Enter expression: ")) ; The program immediately prompts the user for an expression
   (let ([input (read-line (current-input-port) 'any)]) ; Reads input 
-    (if (eof-object? input) ; Loop exits by returning void if user enters eof in terminal 
-        (void) 
+    (cond
+      [(eof-object? input) (void)] ; Loop exits by returning void if user enters eof in terminal 
+      [(string=? input "quit")
+       (when interactive? (displayln "Program Ended")) (void)] ; Program exits if user enters 'quit'
+      [else
         (let* ([tokens (tokenize input)]) ; Converts the input string into list of tokens 
           (let-values ([(value remaining) (eval-expression tokens history)]) ; Parses and evaluates tokenized expression 
             (cond
@@ -85,13 +89,12 @@
               [(null? remaining)
                (let* ([new-history (cons value history)] ; Adding a value to history involves cons-ing it with the existing history
                       [index (length new-history)])
-                 (when interactive?
-                   (display index) (display ": ")) ; The printed result is prefixed by the history id 
+                   (display index) (display ": ") ; The printed result is prefixed by the history id 
                  (displayln (real->double-flonum value)) ; Number is converted to a float and then printed with display
                  (eval-loop new-history))]
               [else
                (displayln "Error: Invalid Expression")
-               (eval-loop history)]))))))
+               (eval-loop history)])))])))
 
 
 (define (main)
