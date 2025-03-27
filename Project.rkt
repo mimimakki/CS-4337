@@ -36,8 +36,7 @@
        (helper (cdr chars) acc (string-append current (string (car chars))))]
       [(char-numeric? (car chars)) ; Handles numbers
        (helper (cdr chars) acc (string-append current (string (car chars))))]
-      [else ; Handles invalid cases and resets current
-       (helper (cdr chars) (if (string=? current "") acc (cons current acc)) "")]))
+      [else 'error])) ; Returns error if token is invalid
   (helper (string->list input) '() ""))
 
   
@@ -53,23 +52,25 @@
 
 
 (define (eval-expression tokens history)
-  (if (null? tokens) ; Base case 
+  (if (or (null? tokens) (eq? tokens 'error)) ; Base case, if tokens are null or contains error
       (values 'error '()) 
       (let* ([token (car tokens)] ; Processes first token using car
              [rest (cdr tokens)] ; Remaining tokens are processed using cdr 
              [parsed (process-tokens token history)]) 
         (cond
+          [(eq? parsed 'error) (values 'error '())] ; Stop further processing if error
           [(number? parsed) (values parsed rest)] ; Valid number is parsed 
-          [(eq? parsed 'error) (values 'error '())]
           [(string=? parsed "+") ; Addition operator (+) is parsed 
            (eval-operation + rest history)] 
           [(string=? parsed "*")  ; Multiplication operator (*) is parsed
            (eval-operation * rest history)] 
           [(string=? parsed "/")  ; Division operator (/) is parsed
            (eval-operation / rest history)]  
-          [(string=? parsed "-")  ; Subtraction operator (-) is parsed 
-           (eval-operation - rest history)]  
-          [else (values 'error '())]))))
+          [(string=? parsed "-")  ; Negation operator (-) is parsed
+           (let-values ([(operand remaining) (eval-expression rest history)])
+             (if (eq? operand 'error) (values 'error '()) 
+                 (values (- operand) remaining)))]  ; Apply negation
+          [else (values 'error '())])))) 
 
 
 (define (eval-loop history) ; The history is a parameter to the eval loop function 
@@ -95,7 +96,6 @@
               [else
                (displayln "Error: Invalid Expression")
                (eval-loop history)])))])))
-
 
 (define (main)
   (eval-loop '()))
