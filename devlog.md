@@ -15,3 +15,7 @@ I have renamed the function "parse-input" to "process-tokens" for naming clarity
 ## March 27, 2025 | 12:27 AM
 
 I have created three evaluation functions. eval-operation is a helper function that is called repeatedly for each operator within the eval-expressions function. The eval-loop function is what will be called within main to continuously prompt the user to enter an expression for calculation. eval-loop will display the history id followed by the calculated value, unless there is an error. I still have to handle a few errors and terminate the program when the user inputs "quit". I also have to figure out if the mode detection works when the program is run through terminal.  
+
+## March 27, 2025 | 2:25 PM
+
+I handled a few error checks taken place in eval-operation including division by zero and invalid operands (i.e. a letter). The program will be terminated if the user inputs "quit". The mode detection runs smoothly through terminal; per the instructions, only the results and errors are displayed in batch (no prompts). 
